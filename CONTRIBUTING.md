@@ -114,6 +114,18 @@ Include:
 
 Look for issues labeled `good first issue`. These are scoped, well-documented, and have clear acceptance criteria. They're designed for new contributors.
 
+## How We Recognize Contributors
+
+Every contribution matters. Here's how we make sure yours is recognized:
+
+- **Release credits** — every GitHub Release lists the contributors who made it happen, by name. Your work is permanently recorded in the project's release history.
+- **README contributors gallery** — your avatar appears in the contributors section automatically after your first merged PR.
+- **Founding contributor** — anyone who contributes before our v1.0.0 release is a founding contributor. When we launch on mainnet, founding contributors will be recognized in the project's on-chain history.
+- **Maintainer path** — consistent contributors get invited as collaborators with write access and review responsibilities. We grow the team from the community, not outside it.
+- **Your voice in the roadmap** — active contributors participate in roadmap discussions and architecture decisions. This is your project too.
+
+We don't do badges or leaderboards. We build genuine relationships with people who care about what we're building.
+
 ## Code of Conduct
 
 This project follows our [Code of Conduct](CODE_OF_CONDUCT.md). Be respectful and constructive.

@@ -63,7 +63,7 @@ export function Dashboard({ onSelectWorkspace }: DashboardProps) {
               </h2>
               <p className="text-muted-foreground mb-8 max-w-sm mx-auto animate-fade-in-up stagger-2">
                 Connect your Freighter wallet to view your quests, track your
-                progress, and start earning LEARN tokens.
+                progress, and start earning USDC.
               </p>
               <Button
                 size="lg"
@@ -224,7 +224,7 @@ export function Dashboard({ onSelectWorkspace }: DashboardProps) {
                   </Badge>
                   <Badge variant="default" className="gap-1">
                     <Coins className="h-3 w-3" />
-                    {formatTokens(ws.poolBalance)} LEARN
+                    {formatTokens(ws.poolBalance)} USDC
                   </Badge>
                 </div>
 
@@ -246,7 +246,7 @@ export function Dashboard({ onSelectWorkspace }: DashboardProps) {
                           Earned so far
                         </span>
                         <span className="text-xs font-black text-green-700">
-                          +{formatTokens(earnedReward)} / {formatTokens(totalReward)} LEARN
+                          +{formatTokens(earnedReward)} / {formatTokens(totalReward)} USDC
                         </span>
                       </div>
                     )}

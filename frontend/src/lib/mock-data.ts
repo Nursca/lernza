@@ -40,7 +40,7 @@ export const MOCK_WORKSPACES: Workspace[] = [
     name: "Learn to Code with Alex",
     description:
       "Teaching my brother the fundamentals of programming. From basic syntax to deploying a real application.",
-    tokenAddr: "LEARN...TOKEN",
+    tokenAddr: "USDC...STELLAR",
     enrolleeCount: 3,
     milestoneCount: 5,
     poolBalance: 2500,
@@ -52,7 +52,7 @@ export const MOCK_WORKSPACES: Workspace[] = [
     name: "Stellar Development Bootcamp",
     description:
       "A structured path to becoming a Stellar developer. Smart contracts, Soroban, DeFi.",
-    tokenAddr: "LEARN...TOKEN",
+    tokenAddr: "USDC...STELLAR",
     enrolleeCount: 8,
     milestoneCount: 10,
     poolBalance: 10000,
@@ -64,7 +64,7 @@ export const MOCK_WORKSPACES: Workspace[] = [
     name: "Design Fundamentals",
     description:
       "Learn UI/UX design principles. From Figma basics to shipping a design system.",
-    tokenAddr: "LEARN...TOKEN",
+    tokenAddr: "USDC...STELLAR",
     enrolleeCount: 5,
     milestoneCount: 4,
     poolBalance: 1200,

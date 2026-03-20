@@ -186,7 +186,7 @@ export function Profile() {
                       {formatTokens(stats.totalEarned)}
                     </p>
                   </div>
-                  <p className="text-xs font-bold">LEARN earned</p>
+                  <p className="text-xs font-bold">USDC earned</p>
                 </div>
               </div>
             </div>
@@ -212,7 +212,7 @@ export function Profile() {
                 </div>
                 <h3 className="font-black mb-2">No earnings yet</h3>
                 <p className="text-sm text-muted-foreground">
-                  Complete milestones to start earning LEARN tokens.
+                  Complete milestones to start earning USDC.
                 </p>
               </CardContent>
             </Card>
@@ -239,7 +239,7 @@ export function Profile() {
                       </div>
                       <div className="text-right flex flex-col items-end gap-1">
                         <Badge variant="success" className="tabular-nums">
-                          +{e.amount} LEARN
+                          +{e.amount} USDC
                         </Badge>
                         <p className="text-xs font-bold text-muted-foreground">
                           {e.date}

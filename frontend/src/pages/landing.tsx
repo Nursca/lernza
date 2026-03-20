@@ -79,7 +79,7 @@ function AnimatedQuestCard() {
         <div className="p-6">
           <h3 className="text-xl font-black mb-1">Stellar Dev Bootcamp</h3>
           <p className="text-sm text-muted-foreground mb-6">
-            8 enrolled &middot; 1,000 LEARN pool
+            8 enrolled &middot; 1,000 USDC pool
           </p>
 
           {/* Milestones with animated check states */}
@@ -111,7 +111,7 @@ function AnimatedQuestCard() {
                       done ? "bg-success" : "bg-secondary"
                     }`}
                   >
-                    {m.reward} LEARN
+                    {m.reward} USDC
                   </span>
                 </div>
               )
@@ -146,7 +146,7 @@ function AnimatedQuestCard() {
               Total earned
             </span>
             <span className="text-sm font-black text-green-700 transition-all duration-300">
-              +{totalEarned} LEARN
+              +{totalEarned} USDC
             </span>
           </div>
 
@@ -170,7 +170,7 @@ function AnimatedQuestCard() {
           className="absolute -bottom-5 -right-4 bg-success border-[2px] border-black shadow-[3px_3px_0_#000] px-4 py-2.5 animate-bounce-in"
         >
           <span className="font-black text-sm">
-            +{milestones[completedCount - 1]?.reward} LEARN
+            +{milestones[completedCount - 1]?.reward} USDC
           </span>
         </div>
       )}

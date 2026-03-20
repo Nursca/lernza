@@ -197,7 +197,7 @@ export function WorkspaceView({ workspaceId, onBack }: WorkspaceViewProps) {
               <div className="flex items-center gap-3">
                 {earnedReward > 0 && (
                   <span className="text-xs font-bold text-green-700">
-                    +{formatTokens(earnedReward)} LEARN earned
+                    +{formatTokens(earnedReward)} USDC earned
                   </span>
                 )}
                 <span className="text-sm font-black">
@@ -297,7 +297,7 @@ export function WorkspaceView({ workspaceId, onBack }: WorkspaceViewProps) {
                               <Badge
                                 variant={isCompleted ? "success" : "default"}
                               >
-                                {ms.rewardAmount} LEARN
+                                {ms.rewardAmount} USDC
                               </Badge>
                               {isExpanded ? (
                                 <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -420,7 +420,7 @@ export function WorkspaceView({ workspaceId, onBack }: WorkspaceViewProps) {
                         </div>
                         <div className="text-right">
                           <Badge variant="success" className="tabular-nums">
-                            +{formatTokens(earned)} LEARN
+                            +{formatTokens(earned)} USDC
                           </Badge>
                           <p className="text-xs font-bold text-muted-foreground mt-1">
                             earned
