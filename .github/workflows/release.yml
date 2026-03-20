@@ -37,14 +37,18 @@ jobs:
 
       - name: Generate release notes
         id: notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
 
           TAG="${GITHUB_REF#refs/tags/}"
           PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${TAG}$" | head -1 2>/dev/null || echo "")
+          HEAD_SHA=$(git rev-parse HEAD)
 
           echo "Tag: $TAG"
           echo "Previous: ${PREV_TAG:-none (first release)}"
+          echo "SHA: $HEAD_SHA"
 
           # ── Commit range ──────────────────────────────────
           if [ -n "$PREV_TAG" ]; then
@@ -75,8 +79,6 @@ jobs:
           fi
 
           # ── Changelog from conventional commits ───────────
-          # Parse each commit ONCE and categorize by prefix.
-          # Uses temp file to avoid SIGPIPE with process substitution.
           FEAT="" FIX="" REFACTOR="" PERF="" DOCS="" TEST="" CI="" BUILD="" CHORE="" OTHER=""
 
           git log "$RANGE" --pretty=format:"- %s (%h)" --no-merges > /tmp/commits.txt 2>/dev/null || true
@@ -117,14 +119,34 @@ jobs:
           fi
 
           # ── Contributors (Name + @username) ──────────────
-          # Uses the commits API which maps git emails to GitHub accounts.
-          # Deduplicates by login so "Dopey" + "ThePrimeJnr" = one entry.
-          # Uses HEAD SHA (not tag name) to avoid API race conditions.
-          HEAD_SHA=$(git rev-parse HEAD)
+          # Step 1: Fetch commits JSON to a file (avoids shell escaping)
+          gh api "repos/${GITHUB_REPOSITORY}/commits" \
+            -X GET -f per_page=100 -f sha="${HEAD_SHA}" \
+            > /tmp/commits_api.json 2>/dev/null || echo "[]" > /tmp/commits_api.json
 
-          CONTRIBUTORS=$(gh api "repos/${GITHUB_REPOSITORY}/commits?per_page=100&sha=${HEAD_SHA}" \
-            --jq '[.[] | select(.author != null) | select(.author.login != "dependabot[bot]") | select(.author.login != "web-flow") | {login: .author.login, name: .commit.author.name}] | unique_by(.login) | .[] | "- **\(.name)** ([@\(.login)](https://github.com/\(.login)))"' \
-            2>/dev/null || echo "")
+          echo "API returned $(wc -c < /tmp/commits_api.json) bytes"
+
+          # Step 2: Write jq filter to a file (avoids bash interpreting \( )
+          cat > /tmp/contributors.jq << 'JQ_FILTER'
+          [
+            .[] |
+            select(.author != null) |
+            select(.author.login != "dependabot[bot]") |
+            select(.author.login != "web-flow") |
+            { login: .author.login, name: .commit.author.name }
+          ] |
+          unique_by(.login) |
+          .[] |
+          "- **\(.name)** ([@\(.login)](https://github.com/\(.login)))"
+          JQ_FILTER
+
+          # Step 3: Run jq with the filter file
+          jq -r -f /tmp/contributors.jq /tmp/commits_api.json > /tmp/contributors.txt 2>/dev/null || true
+
+          echo "Contributors found: $(wc -l < /tmp/contributors.txt)"
+          cat /tmp/contributors.txt
+
+          CONTRIBUTORS=$(cat /tmp/contributors.txt)
 
           if [ -z "$CONTRIBUTORS" ]; then
             CONTRIBUTORS="- Contributors could not be resolved"
