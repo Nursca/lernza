@@ -55,7 +55,7 @@ jobs:
 
           # ── WASM binary sizes ─────────────────────────────
           WASM_TABLE=""
-          for wasm in target/wasm32-unknown-unknown/release/*.wasm; do
+          for wasm in target/wasm32v1-none/release/*.wasm; do
             [ -f "$wasm" ] || continue
             NAME=$(basename "$wasm" .wasm)
             BYTES=$(wc -c < "$wasm" | xargs)
@@ -116,19 +116,22 @@ jobs:
             CHANGELOG="No categorized changes.\n"
           fi
 
-          # ── Contributors ──────────────────────────────────
+          # ── Contributors (Name + @username) ──────────────
           CONTRIBUTORS=""
-          git log "$RANGE" --pretty=format:"%aN" --no-merges 2>/dev/null | sort -u > /tmp/authors.txt || true
+          git log "$RANGE" --pretty=format:"%aN||%aE" --no-merges 2>/dev/null | sort -u -t'|' -k1,1 > /tmp/authors.txt || true
 
-          while IFS= read -r author; do
-            [ -z "$author" ] && continue
+          while IFS= read -r entry; do
+            [ -z "$entry" ] && continue
+            author=$(echo "$entry" | cut -d'|' -f1)
+            email=$(echo "$entry" | cut -d'|' -f3)
+
             [ "$author" = "dependabot[bot]" ] && continue
-            EMAIL=$(git log "$RANGE" --author="$author" --pretty=format:"%aE" --no-merges 2>/dev/null | head -1 || echo "")
-            GH_USER=$(echo "$EMAIL" | grep -oP '\d+\+\K[^@]+(?=@users.noreply.github.com)' 2>/dev/null || echo "")
+
+            GH_USER=$(echo "$email" | grep -oP '\d+\+\K[^@]+(?=@users.noreply.github.com)' 2>/dev/null || echo "")
             if [ -n "$GH_USER" ]; then
-              CONTRIBUTORS="${CONTRIBUTORS}- @${GH_USER}\n"
+              CONTRIBUTORS="${CONTRIBUTORS}- **${author}** (@${GH_USER})\n"
             else
-              CONTRIBUTORS="${CONTRIBUTORS}- ${author}\n"
+              CONTRIBUTORS="${CONTRIBUTORS}- **${author}**\n"
             fi
           done < /tmp/authors.txt
 
@@ -169,6 +172,6 @@ jobs:
           name: ${{ steps.notes.outputs.tag }}
           body: ${{ steps.notes.outputs.body }}
           files: |
-            target/wasm32-unknown-unknown/release/*.wasm
+            target/wasm32v1-none/release/*.wasm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
