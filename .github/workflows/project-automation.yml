@@ -3,6 +3,9 @@ name: Project Automation
 # Keeps the "Lernza Roadmap" project board in sync with issue/PR lifecycle.
 # The board tracks ISSUES only — PRs are never added to the board.
 # PRs move their linked issues through statuses via this workflow.
+# Zero manual steps — everything is fully event-driven.
+#
+# Statuses: Backlog → In Progress → In Review → Done / Invalid
 #
 # ┌─────────────────────────────────────────────────────────────────────┐
 # │  Built-in project workflows (configured in project settings UI):   │
@@ -10,21 +13,21 @@ name: Project Automation
 # │  ✅ Auto-add to project    filter: is:issue is:open                │
 # │  ✅ Item added to project  issue only → Backlog                    │
 # │  ✅ Item closed            issue only → Done                       │
-# │  ✅ Item reopened          issue only → Todo                       │
+# │  ✅ Item reopened          issue only → Backlog                    │
 # │  ✅ Auto-close issue       when status = Done → closes issue       │
 # │  ❌ PR linked to issue     OFF (linking ≠ ready for review)        │
 # │  ❌ PR merged              OFF (operates on PR, not linked issue)  │
 # │  ❌ Code changes requested OFF (operates on PR, not linked issue)  │
 # │  ❌ Code review approved   OFF (operates on PR, not linked issue)  │
 # │                                                                    │
-# │  This Actions workflow handles everything the built-ins can't:     │
+# │  This Actions workflow handles everything else:                    │
 # │                                                                    │
-# │  Issue assigned            → In Progress (if not already further)  │
-# │  Issue unassigned (none)   → Todo (only from In Progress)          │
+# │  Issue assigned            → In Progress (only from Backlog)       │
+# │  Issue unassigned (none)   → Backlog (only from In Progress)       │
 # │  Issue closed not_planned  → Invalid (overrides built-in Done)     │
 # │  Review requested on PR    → linked issues to In Review            │
 # │  Changes requested review  → linked issues to In Progress          │
-# │  PR closed without merge   → In Progress/Todo (if no other PRs)   │
+# │  PR closed without merge   → In Progress (assigned) / Backlog     │
 # │                                                                    │
 # │  PR merged → Done is handled by the indirect chain:                │
 # │  merge → GitHub auto-closes linked issue → built-in Item closed    │
@@ -46,22 +49,21 @@ env:
   PROJECT_NUMBER: "1"
   STATUS_FIELD_ID: "PVTSSF_lADOC20SDc4BRpIZzg_aUc4"
   PROJECT_ID: "PVT_kwDOC20SDc4BRpIZ"
-  STATUS_BACKLOG: "11dd4cec"
-  STATUS_TODO: "fb5b0bc3"
-  STATUS_IN_PROGRESS: "8b6279b2"
-  STATUS_IN_REVIEW: "b3cfa0b7"
-  STATUS_DONE: "98fbbd58"
-  STATUS_INVALID: "bf0b7b0b"
+  STATUS_BACKLOG: "9ee49bec"
+  STATUS_IN_PROGRESS: "2f115854"
+  STATUS_IN_REVIEW: "cb65cf8c"
+  STATUS_DONE: "9e0f6df4"
+  STATUS_INVALID: "c099a7e2"
 
 jobs:
   # ─── Issue assigned → In Progress ──────────────────────────────
-  # Only moves if issue is in Backlog or Todo. Does NOT yank issues
-  # backwards from In Review, Done, or Invalid.
+  # Only moves from Backlog. Does NOT yank issues backwards from
+  # In Review, Done, or Invalid.
   issue-assigned:
     if: github.event_name == 'issues' && github.event.action == 'assigned'
     runs-on: ubuntu-latest
     steps:
-      - name: Move to In Progress if in Backlog or Todo
+      - name: Move to In Progress if in Backlog
         run: |
           # Ensure issue is in project
           ITEM_ID=$(gh project item-add $PROJECT_NUMBER \
@@ -76,7 +78,6 @@ jobs:
             '.items[] | select(.content.number == ($N|tonumber)) | .status')
 
           if [ "$CURRENT_STATUS" = "Backlog" ] || \
-             [ "$CURRENT_STATUS" = "Todo" ] || \
              [ "$CURRENT_STATUS" = "" ] || \
              [ "$CURRENT_STATUS" = "null" ]; then
 
@@ -95,14 +96,14 @@ jobs:
             echo "Skipped — issue #${{ github.event.issue.number }} is already $CURRENT_STATUS"
           fi
 
-  # ─── Issue unassigned → Todo (if no assignees left) ────────────
+  # ─── Issue unassigned → Backlog (if no assignees left) ─────────
   # Only moves from In Progress. Does NOT move issues that are
   # In Review (PR still open), Done, or Invalid.
   issue-unassigned:
     if: github.event_name == 'issues' && github.event.action == 'unassigned'
     runs-on: ubuntu-latest
     steps:
-      - name: Move back to Todo if no assignees and currently In Progress
+      - name: Move back to Backlog if no assignees and currently In Progress
         run: |
           ASSIGNEE_COUNT=$(gh issue view ${{ github.event.issue.number }} \
             --repo ${{ github.repository }} --json assignees -q '.assignees | length')
@@ -126,7 +127,7 @@ jobs:
             exit 0
           fi
 
-          # Only move back to Todo from In Progress
+          # Only move back to Backlog from In Progress
           if [ "$CURRENT_STATUS" = "In Progress" ]; then
             gh api graphql -f query="
               mutation {
@@ -134,11 +135,11 @@ jobs:
                   projectId: \"$PROJECT_ID\"
                   itemId: \"$ITEM_ID\"
                   fieldId: \"$STATUS_FIELD_ID\"
-                  value: { singleSelectOptionId: \"$STATUS_TODO\" }
+                  value: { singleSelectOptionId: \"$STATUS_BACKLOG\" }
                 }) { projectV2Item { id } }
               }"
 
-            echo "Moved #${{ github.event.issue.number }} back to Todo (no assignees)"
+            echo "Moved #${{ github.event.issue.number }} back to Backlog (no assignees)"
           else
             echo "Skipped — issue is $CURRENT_STATUS, not In Progress"
           fi
@@ -290,10 +291,10 @@ jobs:
             echo "Moved #$NUM to In Progress (changes requested)"
           done
 
-  # ─── PR closed without merge → In Progress or Todo ────────────
+  # ─── PR closed without merge → In Progress or Backlog ──────────
   # Checks for OTHER open PRs linked to the same issue first.
   # If another PR is still open, the issue stays In Review.
-  # Otherwise: In Progress if assigned, Todo if not.
+  # Otherwise: In Progress if assigned, Backlog if not.
   pr-closed-not-merged:
     if: >-
       github.event_name == 'pull_request_target' &&
@@ -356,8 +357,8 @@ jobs:
               TARGET="$STATUS_IN_PROGRESS"
               TARGET_NAME="In Progress"
             else
-              TARGET="$STATUS_TODO"
-              TARGET_NAME="Todo"
+              TARGET="$STATUS_BACKLOG"
+              TARGET_NAME="Backlog"
             fi
 
             gh api graphql -f query="
