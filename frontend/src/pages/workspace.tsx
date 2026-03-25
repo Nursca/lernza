@@ -24,9 +24,6 @@ import {
   MOCK_COMPLETIONS,
 } from "@/lib/mock-data"
 import { formatTokens } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
-import { ToastContainer } from "@/components/toast"
-import { ShareButton } from "@/components/share-button"
 
 interface WorkspaceViewProps {
   workspaceId: number
@@ -131,11 +128,6 @@ export function WorkspaceView({ workspaceId, onBack }: WorkspaceViewProps) {
                 <Plus className="h-4 w-4" />
                 Add Milestone
               </Button>
-              <ShareButton
-          questId={workspaceId}
-          questName={ws.name}
-          onToast={addToast}
-        />
             </div>
           </div>
         </div>
@@ -449,7 +441,6 @@ export function WorkspaceView({ workspaceId, onBack }: WorkspaceViewProps) {
           )}
         </div>
       )}
-       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   )
 }
