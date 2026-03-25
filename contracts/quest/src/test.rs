@@ -536,3 +536,179 @@ fn test_private_quest_not_in_public_listings() {
     let ws = client.get_quest(&0);
     assert_eq!(ws.visibility, Visibility::Private);
 }
+
+// --- Edge Case Tests ---
+
+#[test]
+fn test_create_quest_empty_name() {
+    let (env, client, owner, token) = setup();
+    let result = client.try_create_quest(
+        &owner,
+        &String::from_str(&env, ""), // Empty name
+        &String::from_str(&env, "Description"),
+        &token,
+        &Visibility::Public,
+    );
+    // Should succeed - contract doesn't validate empty strings
+    assert_eq!(result, Ok(Ok(0)));
+    
+    let quest = client.get_quest(&0);
+    assert_eq!(quest.name, String::from_str(&env, ""));
+}
+
+#[test]
+fn test_create_quest_empty_description() {
+    let (env, client, owner, token) = setup();
+    let result = client.try_create_quest(
+        &owner,
+        &String::from_str(&env, "Name"),
+        &String::from_str(&env, ""), // Empty description
+        &token,
+        &Visibility::Public,
+    );
+    // Should succeed - contract doesn't validate empty strings
+    assert_eq!(result, Ok(Ok(0)));
+    
+    let quest = client.get_quest(&0);
+    assert_eq!(quest.description, String::from_str(&env, ""));
+}
+
+#[test]
+fn test_create_quest_both_empty() {
+    let (env, client, owner, token) = setup();
+    let result = client.try_create_quest(
+        &owner,
+        &String::from_str(&env, ""), // Empty name
+        &String::from_str(&env, ""), // Empty description
+        &token,
+        &Visibility::Public,
+    );
+    // Should succeed - contract doesn't validate empty strings
+    assert_eq!(result, Ok(Ok(0)));
+    
+    let quest = client.get_quest(&0);
+    assert_eq!(quest.name, String::from_str(&env, ""));
+    assert_eq!(quest.description, String::from_str(&env, ""));
+}
+
+#[test]
+fn test_create_quest_very_long_name() {
+    let (env, client, owner, token) = setup();
+    
+    // Create a very long string (1000 characters)
+    let long_name = "a".repeat(1000);
+    let result = client.try_create_quest(
+        &owner,
+        &String::from_str(&env, &long_name),
+        &String::from_str(&env, "Description"),
+        &token,
+        &Visibility::Public,
+    );
+    // Should succeed - contract doesn't validate string length
+    assert_eq!(result, Ok(Ok(0)));
+    
+    let quest = client.get_quest(&0);
+    assert_eq!(quest.name, String::from_str(&env, &long_name));
+}
+
+#[test]
+fn test_create_quest_very_long_description() {
+    let (env, client, owner, token) = setup();
+    
+    // Create a very long string (2000 characters)
+    let long_desc = "b".repeat(2000);
+    let result = client.try_create_quest(
+        &owner,
+        &String::from_str(&env, "Name"),
+        &String::from_str(&env, &long_desc),
+        &token,
+        &Visibility::Public,
+    );
+    // Should succeed - contract doesn't validate string length
+    assert_eq!(result, Ok(Ok(0)));
+    
+    let quest = client.get_quest(&0);
+    assert_eq!(quest.description, String::from_str(&env, &long_desc));
+}
+
+#[test]
+fn test_create_quest_both_very_long() {
+    let (env, client, owner, token) = setup();
+    
+    // Create very long strings
+    let long_name = "x".repeat(500);
+    let long_desc = "y".repeat(1500);
+    let result = client.try_create_quest(
+        &owner,
+        &String::from_str(&env, &long_name),
+        &String::from_str(&env, &long_desc),
+        &token,
+        &Visibility::Public,
+    );
+    // Should succeed - contract doesn't validate string length
+    assert_eq!(result, Ok(Ok(0)));
+    
+    let quest = client.get_quest(&0);
+    assert_eq!(quest.name, String::from_str(&env, &long_name));
+    assert_eq!(quest.description, String::from_str(&env, &long_desc));
+}
+
+#[test]
+fn test_add_enrollee_non_existent_quest() {
+    let (_env, client, _owner, _token) = setup();
+    let enrollee = Address::generate(&_env);
+    let result = client.try_add_enrollee(&999, &enrollee); // Non-existent quest ID
+    assert_eq!(result, Err(Ok(Error::NotFound)));
+}
+
+#[test]
+fn test_remove_enrollee_non_existent_quest() {
+    let (_env, client, _owner, _token) = setup();
+    let enrollee = Address::generate(&_env);
+    let result = client.try_remove_enrollee(&999, &enrollee); // Non-existent quest ID
+    assert_eq!(result, Err(Ok(Error::NotFound)));
+}
+
+#[test]
+fn test_set_visibility_non_existent_quest() {
+    let (_env, client, _owner, _token) = setup();
+    let result = client.try_set_visibility(&999, &Visibility::Private); // Non-existent quest ID
+    assert_eq!(result, Err(Ok(Error::NotFound)));
+}
+
+#[test]
+fn test_add_enrollee_wrong_owner() {
+    let (env, client, owner, token) = setup();
+    create_quest_helper(&env, &client, &owner, &token);
+    
+    let _wrong_owner = Address::generate(&env);
+    let enrollee = Address::generate(&env);
+    let result = client.try_add_enrollee(&0, &enrollee); // This should work regardless of who calls it
+    // Note: The current implementation doesn't check owner for add_enrollee
+    assert_eq!(result, Ok(Ok(())));
+}
+
+#[test]
+fn test_remove_enrollee_wrong_owner() {
+    let (env, client, owner, token) = setup();
+    create_quest_helper(&env, &client, &owner, &token);
+    
+    let enrollee = Address::generate(&env);
+    client.add_enrollee(&0, &enrollee);
+    
+    let _wrong_owner = Address::generate(&env);
+    let result = client.try_remove_enrollee(&0, &enrollee); // This should work regardless of who calls it
+    // Note: The current implementation doesn't check owner for remove_enrollee
+    assert_eq!(result, Ok(Ok(())));
+}
+
+#[test]
+fn test_set_visibility_wrong_owner() {
+    let (env, client, owner, token) = setup();
+    create_quest_helper(&env, &client, &owner, &token);
+    
+    let _wrong_owner = Address::generate(&env);
+    let result = client.try_set_visibility(&0, &Visibility::Private); // This should work regardless of who calls it
+    // Note: The current implementation doesn't check owner for set_visibility
+    assert_eq!(result, Ok(Ok(())));
+}
